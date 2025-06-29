@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Google Maps API Key Vulnerability Checker</title>
+
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --text: #333;
+      --form-bg: white;
+      --textarea-bg: #fefefe;
+      --button-bg: #1a73e8;
+      --button-hover: #0c59c3;
+      --button-text: white;
+      --highlight: #f1f1f1;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #e0e0e0;
+      --form-bg: #1e1e1e;
+      --textarea-bg: #2a2a2a;
+      --button-bg: #4a90e2;
+      --button-hover: #1c78d6;
+      --button-text: #fff;
+      --highlight: #333;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 40px;
+      animation: fadeIn 0.6s ease-in;
+    }
+
+    h2 {
+      text-align: center;
+      color: var(--button-bg);
+    }
+
+    form {
+      max-width: 600px;
+      margin: 30px auto;
+      background: var(--form-bg);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      background-color: var(--textarea-bg);
+      color: var(--text);
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button[type="submit"] {
+      background-color: var(--button-bg);
+      color: var(--button-text);
+    }
+
+    button[type="submit"]:hover {
+      background-color: var(--button-hover);
+    }
+
+    button[type="button"] {
+      background-color: #f1f3f4;
+      color: #555;
+    }
+
+    body.dark button[type="button"] {
+      background-color: #333;
+      color: #ddd;
+    }
+
+    button[type="button"]:hover {
+      background-color: #ddd;
+    }
+
+    .output-box {
+      width: 100%;
+      background-color: var(--highlight);
+      padding: 20px;
+      border-radius: 10px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      margin-top: 20px;
+      overflow-x: auto;
+    }
+
+    .loader {
+      display: none;
+      margin: 20px auto;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid var(--button-bg);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    .error {
+      color: red;
+      text-align: center;
+    }
+
+    .top-controls {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 14px;
+      color: #888;
+    }
+
+    .footer a {
+      color: #1a73e8;
+      text-decoration: none;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    a {
+      color: #1a73e8;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-controls">
+    <button type="button" onclick="toggleDarkMode()">🌓Dark Mode</button>
+  </div>
+
+  <h2>🔐 Google Maps API Key Scanner</h2>
+
+  <form method="POST" onsubmit="showLoader()">
+    <input type="text" name="api_key" id="api_key" placeholder="Paste your API key here" required>
+    <div class="btn-group">
+      <button type="submit">🔎 Check</button>
+      <button type="button" onclick="clearForm()">🧹 Clear</button>
+      {% if output %}
+        <button type="button" onclick="downloadResults()">⬇️ Download</button>
+        <button type="button" onclick="copyResults()">📋 Copy</button>
+      {% endif %}
+    </div>
+    <div class="loader" id="loader"></div>
+  </form>
+
+  {% if output %}
+    <h3>Result:</h3>
+    <div class="output-box" id="resultText">{{ output|urlize(target="_blank", rel="noreferrer") }}</div>
+  {% endif %}
+
+  {% if error %}
+    <div class="error">
+      <h3>Error:</h3>
+      <pre>{{ error }}</pre>
+    </div>
+  {% endif %}
+
+  <div class="footer">
+    Made with ❤️ by <strong>Shubham</strong>
+  </div>
+
+  <script>
+    function clearForm() {
+      document.getElementById('api_key').value = '';
+      document.getElementById('resultText')?.remove();
+      document.querySelector('pre')?.remove();
+      document.querySelector('h3')?.remove();
+      document.querySelector('.error')?.remove();
+    }
+
+    function showLoader() {
+      document.getElementById('loader').style.display = 'block';
+    }
+
+    function downloadResults() {
+      const content = document.getElementById('resultText').innerText;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'gmaps_api_key_check_results.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function copyResults() {
+      const content = document.getElementById('resultText').innerText;
+      navigator.clipboard.writeText(content).then(() => {
+        alert("✅ Results copied to clipboard!");
+      });
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+  </script>
+</body>
+</html>
